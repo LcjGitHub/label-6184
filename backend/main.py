@@ -1,8 +1,8 @@
 """金属徽章 pin 交换记录 API。"""
 
-from typing import List
+from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
@@ -93,11 +93,20 @@ def row_to_event(row) -> EventResponse:
 
 
 @app.get("/api/pins", response_model=List[PinResponse])
-def list_pins() -> List[PinResponse]:
-    """获取全部徽章交换记录。"""
+def list_pins(
+    keyword: Optional[str] = Query(None, description="关键词，按图案描述或交换对象模糊匹配"),
+) -> List[PinResponse]:
+    """获取全部徽章交换记录，支持关键词搜索。"""
     conn = get_connection()
     try:
-        rows = conn.execute("SELECT * FROM pins ORDER BY exchange_date DESC, id DESC").fetchall()
+        if keyword:
+            like_pattern = f"%{keyword}%"
+            rows = conn.execute(
+                "SELECT * FROM pins WHERE pattern_description LIKE ? OR exchange_partner LIKE ? ORDER BY exchange_date DESC, id DESC",
+                (like_pattern, like_pattern),
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM pins ORDER BY exchange_date DESC, id DESC").fetchall()
         return [row_to_pin(row) for row in rows]
     finally:
         conn.close()

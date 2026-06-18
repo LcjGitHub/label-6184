@@ -6,10 +6,12 @@ const api = axios.create({
 });
 
 /**
- * 获取全部徽章记录
+ * 获取全部徽章记录，支持关键词搜索
  */
-export async function fetchPins(): Promise<Pin[]> {
-  const { data } = await api.get<Pin[]>("/pins");
+export async function fetchPins(keyword?: string): Promise<Pin[]> {
+  const { data } = await api.get<Pin[]>("/pins", {
+    params: keyword ? { keyword } : {},
+  });
   return data;
 }
 

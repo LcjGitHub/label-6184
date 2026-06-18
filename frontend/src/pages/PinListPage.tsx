@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import {
   Badge,
@@ -7,6 +7,9 @@ import {
   Flex,
   Heading,
   IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Spinner,
   Table,
   Tbody,
@@ -17,7 +20,7 @@ import {
   Tr,
   useToast,
 } from "@chakra-ui/react";
-import { FiEdit2, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
 import { deletePin, fetchPins } from "../api/pins";
 import type { Pin } from "../types/pin";
 
@@ -27,12 +30,14 @@ import type { Pin } from "../types/pin";
 export default function PinListPage() {
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToast();
 
-  const loadPins = useCallback(async () => {
+  const loadPins = useCallback(async (keyword?: string) => {
     setLoading(true);
     try {
-      const data = await fetchPins();
+      const data = await fetchPins(keyword || undefined);
       setPins(data);
     } catch {
       toast({
@@ -45,11 +50,25 @@ export default function PinListPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     loadPins();
   }, [loadPins]);
+
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      loadPins(searchKeyword.trim());
+    }, 300);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchKeyword, loadPins]);
 
   /**
    * 删除指定记录并刷新列表
@@ -61,7 +80,7 @@ export default function PinListPage() {
     try {
       await deletePin(pin.id);
       toast({ title: "已删除", status: "success", duration: 2000 });
-      await loadPins();
+      await loadPins(searchKeyword.trim());
     } catch {
       toast({ title: "删除失败", status: "error", duration: 3000 });
     }
@@ -90,6 +109,20 @@ export default function PinListPage() {
           新增记录
         </Button>
       </Flex>
+
+      <Box mb={4} maxW="400px">
+        <InputGroup>
+          <InputLeftElement pointerEvents="none">
+            <FiSearch color="gray.400" />
+          </InputLeftElement>
+          <Input
+            placeholder="搜索图案描述或交换对象..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            bg="white"
+          />
+        </InputGroup>
+      </Box>
 
       {pins.length === 0 ? (
         <Text color="gray.500" py={8} textAlign="center">
