@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
   Badge,
   Box,
   Button,
@@ -17,7 +21,7 @@ import {
   Tr,
   useToast,
 } from "@chakra-ui/react";
-import { FiEdit2, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import { deleteWish, fetchWishes } from "../api/wishes";
 import type { Wish } from "../types/wish";
 
@@ -33,14 +37,17 @@ const priorityColorMap: Record<string, string> = {
 export default function WishListPage() {
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const toast = useToast();
 
   const loadWishes = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const data = await fetchWishes();
       setWishes(data);
     } catch {
+      setError(true);
       toast({
         title: "加载失败",
         description: "请确认后端服务已在 6000 端口启动",
@@ -78,6 +85,34 @@ export default function WishListPage() {
       <Flex justify="center" py={12}>
         <Spinner size="lg" color="teal.500" />
       </Flex>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Flex justify="space-between" align="center" mb={4}>
+          <Heading as="h2" size="md">
+            愿望清单列表
+          </Heading>
+          <Button
+            leftIcon={<FiRefreshCw />}
+            colorScheme="teal"
+            onClick={loadWishes}
+          >
+            重新加载
+          </Button>
+        </Flex>
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          <Box>
+            <AlertTitle>加载失败</AlertTitle>
+            <AlertDescription>
+              无法连接到后端服务，请确认后端服务已在 6000 端口启动后点击「重新加载」。
+            </AlertDescription>
+          </Box>
+        </Alert>
+      </Box>
     );
   }
 
