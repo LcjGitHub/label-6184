@@ -293,7 +293,7 @@ export default function PinListPage() {
             <FiSearch color="gray.400" />
           </InputLeftElement>
           <Input
-            placeholder="搜索图案描述或交换对象..."
+            placeholder="搜索图案描述、交换对象或标签..."
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             bg="white"

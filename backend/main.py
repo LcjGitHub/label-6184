@@ -100,7 +100,7 @@ ALLOWED_SORT_ORDERS = {"asc", "desc"}
 
 @app.get("/api/pins", response_model=List[PinResponse])
 def list_pins(
-    keyword: Optional[str] = Query(None, description="关键词，按图案描述或交换对象模糊匹配"),
+    keyword: Optional[str] = Query(None, description="关键词，按图案描述、交换对象或标签模糊匹配"),
     sort_by: Optional[str] = Query(None, description="排序字段，支持 exchange_date、source"),
     sort_order: Optional[str] = Query(None, description="排序方向，asc 升序或 desc 降序"),
 ) -> List[PinResponse]:

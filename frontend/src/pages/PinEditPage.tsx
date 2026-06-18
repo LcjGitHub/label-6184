@@ -171,7 +171,7 @@ export default function PinEditPage() {
               placeholder="例如：迪士尼,米奇,珐琅"
               {...register("tags")}
             />
-            <FormHelperText>多个标签用英文逗号分隔</FormHelperText>
+            <FormHelperText>多个标签用逗号分隔</FormHelperText>
           </FormControl>
 
           <Flex gap={3} pt={2}>
