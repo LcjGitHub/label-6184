@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate
+from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse
 
 app = FastAPI(title="Pin Exchange API", version="1.0.0")
 
@@ -55,6 +55,17 @@ def row_to_series(row) -> SeriesResponse:
         name=row["name"],
         brand=row["brand"],
         description=row["description"],
+    )
+
+
+def row_to_wearing_history(row) -> WearingHistoryResponse:
+    """将 SQLite Row 转为佩戴历史响应模型。"""
+    return WearingHistoryResponse(
+        id=row["id"],
+        pin_id=row["pin_id"],
+        wear_date=row["wear_date"],
+        occasion=row["occasion"],
+        remarks=row["remarks"],
     )
 
 
@@ -337,5 +348,63 @@ def delete_series(series_id: int) -> None:
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="系列不存在")
+    finally:
+        conn.close()
+
+
+@app.get("/api/pins/{pin_id}/wearing-history", response_model=List[WearingHistoryResponse])
+def list_wearing_history(pin_id: int) -> List[WearingHistoryResponse]:
+    """按徽章编号查询佩戴历史列表。"""
+    conn = get_connection()
+    try:
+        existing = conn.execute("SELECT id FROM pins WHERE id = ?", (pin_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="徽章记录不存在")
+        rows = conn.execute(
+            "SELECT * FROM wearing_history WHERE pin_id = ? ORDER BY wear_date DESC, id DESC",
+            (pin_id,),
+        ).fetchall()
+        return [row_to_wearing_history(row) for row in rows]
+    finally:
+        conn.close()
+
+
+@app.post("/api/pins/{pin_id}/wearing-history", response_model=WearingHistoryResponse, status_code=201)
+def create_wearing_history(pin_id: int, payload: WearingHistoryCreate) -> WearingHistoryResponse:
+    """新增佩戴记录。"""
+    conn = get_connection()
+    try:
+        existing = conn.execute("SELECT id FROM pins WHERE id = ?", (pin_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="徽章记录不存在")
+        cursor = conn.execute(
+            """
+            INSERT INTO wearing_history (
+                pin_id, wear_date, occasion, remarks
+            ) VALUES (?, ?, ?, ?)
+            """,
+            (
+                pin_id,
+                payload.wear_date,
+                payload.occasion,
+                payload.remarks,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM wearing_history WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        return row_to_wearing_history(row)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/wearing-history/{history_id}", status_code=204)
+def delete_wearing_history(history_id: int) -> None:
+    """删除佩戴记录。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute("DELETE FROM wearing_history WHERE id = ?", (history_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="佩戴记录不存在")
     finally:
         conn.close()

@@ -83,6 +83,28 @@ SEED_SERIES = [
 ]
 
 
+SEED_WEARING_HISTORY = [
+    {
+        "pin_id": 1,
+        "wear_date": "2025-03-20",
+        "occasion": "上海迪士尼乐园游玩",
+        "remarks": "别在帆布包上，非常显眼",
+    },
+    {
+        "pin_id": 1,
+        "wear_date": "2025-04-01",
+        "occasion": "公司团建活动",
+        "remarks": "搭配迪士尼主题T恤",
+    },
+    {
+        "pin_id": 3,
+        "wear_date": "2024-08-12",
+        "occasion": "奥运观赛派对",
+        "remarks": "佩戴在运动帽上",
+    },
+]
+
+
 def get_connection() -> sqlite3.Connection:
     """获取 SQLite 连接，启用 Row 工厂便于字典访问。"""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -125,6 +147,18 @@ def init_db() -> None:
                 name TEXT NOT NULL,
                 brand TEXT NOT NULL,
                 description TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS wearing_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pin_id INTEGER NOT NULL,
+                wear_date TEXT NOT NULL,
+                occasion TEXT NOT NULL,
+                remarks TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (pin_id) REFERENCES pins(id) ON DELETE CASCADE
             )
             """
         )
@@ -175,6 +209,22 @@ def init_db() -> None:
                         series["name"],
                         series["brand"],
                         series["description"],
+                    ),
+                )
+        wearing_count = conn.execute("SELECT COUNT(*) FROM wearing_history").fetchone()[0]
+        if wearing_count == 0:
+            for wh in SEED_WEARING_HISTORY:
+                conn.execute(
+                    """
+                    INSERT INTO wearing_history (
+                        pin_id, wear_date, occasion, remarks
+                    ) VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        wh["pin_id"],
+                        wh["wear_date"],
+                        wh["occasion"],
+                        wh["remarks"],
                     ),
                 )
         conn.commit()

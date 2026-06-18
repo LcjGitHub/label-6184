@@ -17,6 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { createPin, fetchPin, updatePin } from "../api/pins";
 import type { PinFormData } from "../types/pin";
+import WearingHistorySection from "../components/WearingHistorySection";
 
 const defaultValues: PinFormData = {
   pattern_description: "",
@@ -170,6 +171,8 @@ export default function PinEditPage() {
           </Flex>
         </VStack>
       </form>
+
+      {isEdit && id && <WearingHistorySection pinId={Number(id)} />}
     </Box>
   );
 }

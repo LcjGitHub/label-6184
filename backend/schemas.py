@@ -76,3 +76,24 @@ class SeriesResponse(SeriesBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class WearingHistoryBase(BaseModel):
+    """佩戴历史公共字段。"""
+
+    wear_date: str = Field(..., min_length=1, description="佩戴日期 YYYY-MM-DD")
+    occasion: str = Field(..., min_length=1, description="佩戴场合")
+    remarks: str = Field(default="", description="备注")
+
+
+class WearingHistoryCreate(WearingHistoryBase):
+    """新增佩戴记录。"""
+
+
+class WearingHistoryResponse(WearingHistoryBase):
+    """佩戴记录响应。"""
+
+    id: int
+    pin_id: int
+
+    model_config = {"from_attributes": True}
