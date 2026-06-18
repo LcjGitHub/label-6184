@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   AlertDialog,
@@ -15,6 +15,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Heading,
+  IconButton,
   Input,
   Spinner,
   Table,
@@ -27,7 +28,7 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import { DeleteIcon } from "@chakra-ui/icons";
+import { FiTrash2 } from "react-icons/fi";
 import {
   createWearingHistory,
   deleteWearingHistory,
@@ -49,6 +50,7 @@ export default function WearingHistorySection({ pinId }: Props) {
   const [records, setRecords] = useState<WearingHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<WearingHistory | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const toast = useToast();
 
   const {
@@ -96,6 +98,10 @@ export default function WearingHistorySection({ pinId }: Props) {
     } finally {
       setDeleteTarget(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteTarget(null);
   };
 
   return (
@@ -188,15 +194,14 @@ export default function WearingHistorySection({ pinId }: Props) {
                   <Td>{record.occasion}</Td>
                   <Td color="gray.600">{record.remarks || "—"}</Td>
                   <Td>
-                    <Button
-                      size="xs"
-                      colorScheme="red"
-                      variant="ghost"
-                      onClick={() => setDeleteTarget(record)}
+                    <IconButton
                       aria-label="删除"
-                    >
-                      <DeleteIcon />
-                    </Button>
+                      icon={<FiTrash2 />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="red"
+                      onClick={() => setDeleteTarget(record)}
+                    />
                   </Td>
                 </Tr>
               ))}
@@ -207,8 +212,9 @@ export default function WearingHistorySection({ pinId }: Props) {
 
       <AlertDialog
         isOpen={Boolean(deleteTarget)}
-        leastDestructiveRef={undefined}
-        onClose={() => setDeleteTarget(null)}
+        leastDestructiveRef={cancelRef}
+        onClose={handleDeleteCancel}
+        isCentered
       >
         <AlertDialogOverlay>
           <AlertDialogContent>
@@ -218,9 +224,11 @@ export default function WearingHistorySection({ pinId }: Props) {
             <AlertDialogBody>
               确定要删除 {deleteTarget?.wear_date} 的佩戴记录吗？此操作不可撤销。
             </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button onClick={() => setDeleteTarget(null)}>取消</Button>
-              <Button colorScheme="red" onClick={onConfirmDelete} ml={3}>
+            <AlertDialogFooter gap={3}>
+              <Button ref={cancelRef} variant="outline" onClick={handleDeleteCancel}>
+                取消
+              </Button>
+              <Button colorScheme="red" onClick={onConfirmDelete}>
                 删除
               </Button>
             </AlertDialogFooter>
