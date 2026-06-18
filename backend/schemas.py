@@ -1,5 +1,6 @@
 """Pydantic 请求/响应模型。"""
 
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -11,6 +12,7 @@ class PinBase(BaseModel):
     exchange_partner: str = Field(..., min_length=1, description="交换对象")
     exchange_date: str = Field(..., min_length=1, description="交换日期 YYYY-MM-DD")
     worn: bool = Field(default=False, description="是否佩戴过")
+    is_favorite: bool = Field(default=False, description="是否收藏")
 
 
 class PinCreate(PinBase):
@@ -19,6 +21,12 @@ class PinCreate(PinBase):
 
 class PinUpdate(PinBase):
     """更新徽章记录。"""
+
+
+class PinPatch(BaseModel):
+    """部分更新徽章记录（用于收藏标记）。"""
+
+    is_favorite: Optional[bool] = Field(None, description="是否收藏")
 
 
 class PinResponse(PinBase):

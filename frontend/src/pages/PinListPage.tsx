@@ -21,8 +21,8 @@ import {
   Tr,
   useToast,
 } from "@chakra-ui/react";
-import { FiEdit2, FiPlus, FiSearch, FiTrash2, FiChevronUp, FiChevronDown } from "react-icons/fi";
-import { deletePin, fetchPins } from "../api/pins";
+import { FiEdit2, FiPlus, FiSearch, FiTrash2, FiChevronUp, FiChevronDown, FiStar } from "react-icons/fi";
+import { deletePin, fetchPins, patchPin } from "../api/pins";
 import type { Pin, PinSortField, SortOrder } from "../types/pin";
 
 /**
@@ -105,6 +105,26 @@ export default function PinListPage() {
   };
 
   /**
+   * 切换徽章的收藏状态
+   */
+  const handleToggleFavorite = async (pin: Pin) => {
+    try {
+      const newFavorite = !pin.is_favorite;
+      const updatedPin = await patchPin(pin.id, { is_favorite: newFavorite });
+      setPins((prev) =>
+        prev.map((p) => (p.id === pin.id ? updatedPin : p))
+      );
+      toast({
+        title: newFavorite ? "已收藏" : "已取消收藏",
+        status: "success",
+        duration: 2000,
+      });
+    } catch {
+      toast({ title: "操作失败", status: "error", duration: 3000 });
+    }
+  };
+
+  /**
    * 删除指定记录并刷新列表
    */
   const handleDelete = async (pin: Pin) => {
@@ -127,7 +147,7 @@ export default function PinListPage() {
       return (
         <Tbody>
           <Tr>
-            <Td colSpan={6} py={12} textAlign="center">
+            <Td colSpan={7} py={12} textAlign="center">
               <Spinner size="lg" color="teal.500" />
             </Td>
           </Tr>
@@ -138,7 +158,7 @@ export default function PinListPage() {
       return (
         <Tbody>
           <Tr>
-            <Td colSpan={6} py={12} textAlign="center">
+            <Td colSpan={7} py={12} textAlign="center">
               <Text color="gray.500">
                 {hasActiveSearch
                   ? "未找到匹配记录"
@@ -153,6 +173,17 @@ export default function PinListPage() {
       <Tbody>
         {pins.map((pin) => (
           <Tr key={pin.id} _hover={{ bg: "gray.50" }}>
+            <Td width="40px" textAlign="center">
+              <IconButton
+                aria-label={pin.is_favorite ? "取消收藏" : "收藏"}
+                icon={<FiStar />}
+                size="sm"
+                variant="ghost"
+                color={pin.is_favorite ? "yellow.500" : "gray.400"}
+                onClick={() => handleToggleFavorite(pin)}
+                fill={pin.is_favorite ? "currentColor" : "none"}
+              />
+            </Td>
             <Td fontWeight="medium">
               <Link
                 as={RouterLink}
@@ -232,6 +263,7 @@ export default function PinListPage() {
         <Table size="md">
           <Thead bg="gray.100">
             <Tr>
+              <Th width="40px" textAlign="center">收藏</Th>
               <Th>图案描述</Th>
               <Th
                 cursor="pointer"

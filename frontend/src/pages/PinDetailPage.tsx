@@ -143,6 +143,15 @@ export default function PinDetailPage() {
             {pin.worn ? "是" : "否"}
           </Badge>
         </Box>
+
+        <Box>
+          <Text fontSize="sm" color="gray.500" mb={1}>
+            是否收藏
+          </Text>
+          <Badge colorScheme={pin.is_favorite ? "yellow" : "gray"} px={2} py={1}>
+            {pin.is_favorite ? "是" : "否"}
+          </Badge>
+        </Box>
       </VStack>
     </Box>
   );

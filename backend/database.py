@@ -12,6 +12,7 @@ SEED_PINS = [
         "exchange_partner": "来自东京的交换者 Ken",
         "exchange_date": "2025-03-15",
         "worn": True,
+        "is_favorite": False,
     },
     {
         "pattern_description": "哈利波特霍格沃茨校徽金属 pin",
@@ -19,6 +20,7 @@ SEED_PINS = [
         "exchange_partner": "北京 pin 爱好者 @小鹿",
         "exchange_date": "2025-04-02",
         "worn": False,
+        "is_favorite": False,
     },
     {
         "pattern_description": "2024 奥运会五环纪念徽章",
@@ -26,6 +28,7 @@ SEED_PINS = [
         "exchange_partner": "法国交换者 Marie",
         "exchange_date": "2024-08-10",
         "worn": True,
+        "is_favorite": False,
     },
     {
         "pattern_description": "宝可梦皮卡丘渐变烤漆 pin",
@@ -33,6 +36,7 @@ SEED_PINS = [
         "exchange_partner": "成都漫展现场交换",
         "exchange_date": "2025-01-20",
         "worn": False,
+        "is_favorite": False,
     },
     {
         "pattern_description": "故宫博物院千里江山图系列",
@@ -40,6 +44,7 @@ SEED_PINS = [
         "exchange_partner": "杭州收藏家阿明",
         "exchange_date": "2025-05-08",
         "worn": True,
+        "is_favorite": False,
     },
 ]
 
@@ -163,7 +168,8 @@ def init_db() -> None:
                 source TEXT NOT NULL,
                 exchange_partner TEXT NOT NULL,
                 exchange_date TEXT NOT NULL,
-                worn INTEGER NOT NULL DEFAULT 0
+                worn INTEGER NOT NULL DEFAULT 0,
+                is_favorite INTEGER NOT NULL DEFAULT 0
             )
             """
         )
@@ -230,8 +236,8 @@ def init_db() -> None:
                     """
                     INSERT INTO pins (
                         pattern_description, source, exchange_partner,
-                        exchange_date, worn
-                    ) VALUES (?, ?, ?, ?, ?)
+                        exchange_date, worn, is_favorite
+                    ) VALUES (?, ?, ?, ?, ?, ?)
                     """,
                     (
                         pin["pattern_description"],
@@ -239,6 +245,7 @@ def init_db() -> None:
                         pin["exchange_partner"],
                         pin["exchange_date"],
                         1 if pin["worn"] else 0,
+                        1 if pin["is_favorite"] else 0,
                     ),
                 )
         contact_count = conn.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]

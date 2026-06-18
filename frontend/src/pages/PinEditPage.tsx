@@ -25,6 +25,7 @@ const defaultValues: PinFormData = {
   exchange_partner: "",
   exchange_date: "",
   worn: false,
+  is_favorite: false,
 };
 
 /**
@@ -59,6 +60,7 @@ export default function PinEditPage() {
             exchange_partner: pin.exchange_partner,
             exchange_date: pin.exchange_date,
             worn: pin.worn,
+            is_favorite: pin.is_favorite,
           });
         }
       } catch {
@@ -154,6 +156,10 @@ export default function PinEditPage() {
 
           <FormControl>
             <Checkbox {...register("worn")}>是否佩戴过</Checkbox>
+          </FormControl>
+
+          <FormControl>
+            <Checkbox {...register("is_favorite")}>是否收藏</Checkbox>
           </FormControl>
 
           <Flex gap={3} pt={2}>

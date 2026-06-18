@@ -8,6 +8,7 @@ export interface Pin {
   exchange_partner: string;
   exchange_date: string;
   worn: boolean;
+  is_favorite: boolean;
 }
 
 /**
@@ -19,6 +20,14 @@ export interface PinFormData {
   exchange_partner: string;
   exchange_date: string;
   worn: boolean;
+  is_favorite: boolean;
+}
+
+/**
+ * 部分更新徽章时的数据（用于收藏标记）
+ */
+export interface PinPatchData {
+  is_favorite: boolean;
 }
 
 /**
