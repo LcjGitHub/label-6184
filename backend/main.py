@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse, WishCreate, WishResponse, WishUpdate
+from schemas import ContactCreate, ContactResponse, ContactUpdate, EventCreate, EventResponse, EventUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse, WishCreate, WishResponse, WishUpdate
 
 app = FastAPI(title="Pin Exchange API", version="1.0.0")
 
@@ -77,6 +77,18 @@ def row_to_wish(row) -> WishResponse:
         expected_source=row["expected_source"],
         priority=row["priority"],
         achieved=bool(row["achieved"]),
+    )
+
+
+def row_to_event(row) -> EventResponse:
+    """将 SQLite Row 转为线下交换活动响应模型。"""
+    return EventResponse(
+        id=row["id"],
+        name=row["name"],
+        event_date=row["event_date"],
+        location=row["location"],
+        max_attendees=row["max_attendees"],
+        remark=row["remark"],
     )
 
 
@@ -522,5 +534,102 @@ def delete_wish(wish_id: int) -> None:
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="愿望不存在")
+    finally:
+        conn.close()
+
+
+@app.get("/api/events", response_model=List[EventResponse])
+def list_events() -> List[EventResponse]:
+    """获取全部线下交换活动，按日期排序。"""
+    conn = get_connection()
+    try:
+        rows = conn.execute("SELECT * FROM events ORDER BY event_date ASC, id DESC").fetchall()
+        return [row_to_event(row) for row in rows]
+    finally:
+        conn.close()
+
+
+@app.get("/api/events/{event_id}", response_model=EventResponse)
+def get_event(event_id: int) -> EventResponse:
+    """获取单条活动信息。"""
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="活动不存在")
+        return row_to_event(row)
+    finally:
+        conn.close()
+
+
+@app.post("/api/events", response_model=EventResponse, status_code=201)
+def create_event(payload: EventCreate) -> EventResponse:
+    """新增线下交换活动。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO events (
+                name, event_date, location, max_attendees, remark
+            ) VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                payload.name,
+                payload.event_date,
+                payload.location,
+                payload.max_attendees,
+                payload.remark,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM events WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        return row_to_event(row)
+    finally:
+        conn.close()
+
+
+@app.put("/api/events/{event_id}", response_model=EventResponse)
+def update_event(event_id: int, payload: EventUpdate) -> EventResponse:
+    """更新线下交换活动。"""
+    conn = get_connection()
+    try:
+        existing = conn.execute("SELECT id FROM events WHERE id = ?", (event_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="活动不存在")
+        conn.execute(
+            """
+            UPDATE events SET
+                name = ?,
+                event_date = ?,
+                location = ?,
+                max_attendees = ?,
+                remark = ?
+            WHERE id = ?
+            """,
+            (
+                payload.name,
+                payload.event_date,
+                payload.location,
+                payload.max_attendees,
+                payload.remark,
+                event_id,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
+        return row_to_event(row)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/events/{event_id}", status_code=204)
+def delete_event(event_id: int) -> None:
+    """删除线下交换活动。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="活动不存在")
     finally:
         conn.close()

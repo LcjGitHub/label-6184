@@ -1,6 +1,7 @@
 import { Box, Container, Heading, Tab, TabList, Tabs } from "@chakra-ui/react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import ContactListPage from "./pages/ContactListPage";
+import EventListPage from "./pages/EventListPage";
 import PinEditPage from "./pages/PinEditPage";
 import PinListPage from "./pages/PinListPage";
 import SeriesListPage from "./pages/SeriesListPage";
@@ -13,6 +14,7 @@ function AppTabs() {
   const isContacts = location.pathname.startsWith("/contacts");
   const isSeries = location.pathname.startsWith("/series");
   const isWishes = location.pathname.startsWith("/wishes");
+  const isEvents = location.pathname.startsWith("/events");
 
   const handleTabChange = (index: number) => {
     if (index === 0) {
@@ -21,8 +23,10 @@ function AppTabs() {
       navigate("/contacts");
     } else if (index === 2) {
       navigate("/series");
-    } else {
+    } else if (index === 3) {
       navigate("/wishes");
+    } else {
+      navigate("/events");
     }
   };
 
@@ -30,6 +34,7 @@ function AppTabs() {
   if (isContacts) tabIndex = 1;
   if (isSeries) tabIndex = 2;
   if (isWishes) tabIndex = 3;
+  if (isEvents) tabIndex = 4;
 
   return (
     <Tabs
@@ -44,6 +49,7 @@ function AppTabs() {
         <Tab>交换对象通讯录</Tab>
         <Tab>徽章系列分类</Tab>
         <Tab>愿望清单</Tab>
+        <Tab>线下交换活动</Tab>
       </TabList>
     </Tabs>
   );
@@ -120,6 +126,15 @@ export default function App() {
               <WishEditPage />
             </>
           } />
+          <Route
+            path="/events"
+            element={
+              <>
+                <AppTabs />
+                <EventListPage />
+              </>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Container>

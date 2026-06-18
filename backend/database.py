@@ -125,6 +125,23 @@ SEED_WISHES = [
     },
 ]
 
+SEED_EVENTS = [
+    {
+        "name": "2026上海徽章交换大会",
+        "event_date": "2026-07-15",
+        "location": "上海国际会展中心B馆",
+        "max_attendees": 200,
+        "remark": "本次大会将有来自全国各地的徽章收藏家参与，现场设有迪士尼、漫威、哈利波特等主题专区。",
+    },
+    {
+        "name": "北京pin爱好者线下交流会",
+        "event_date": "2026-08-02",
+        "location": "北京市朝阳区三里屯SOHO多功能厅",
+        "max_attendees": 50,
+        "remark": "小型精品交换会，仅限提前报名。主要交换哈利波特、故宫文创等热门系列。",
+    },
+]
+
 
 def get_connection() -> sqlite3.Connection:
     """获取 SQLite 连接，启用 Row 工厂便于字典访问。"""
@@ -191,6 +208,18 @@ def init_db() -> None:
                 expected_source TEXT NOT NULL,
                 priority TEXT NOT NULL DEFAULT '中',
                 achieved INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                event_date TEXT NOT NULL,
+                location TEXT NOT NULL,
+                max_attendees INTEGER NOT NULL,
+                remark TEXT NOT NULL DEFAULT ''
             )
             """
         )
@@ -273,6 +302,23 @@ def init_db() -> None:
                         wish["expected_source"],
                         wish["priority"],
                         1 if wish["achieved"] else 0,
+                    ),
+                )
+        event_count = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        if event_count == 0:
+            for event in SEED_EVENTS:
+                conn.execute(
+                    """
+                    INSERT INTO events (
+                        name, event_date, location, max_attendees, remark
+                    ) VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        event["name"],
+                        event["event_date"],
+                        event["location"],
+                        event["max_attendees"],
+                        event["remark"],
                     ),
                 )
         conn.commit()

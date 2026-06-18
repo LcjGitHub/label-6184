@@ -122,3 +122,29 @@ class WishResponse(WishBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class EventBase(BaseModel):
+    """线下交换活动公共字段。"""
+
+    name: str = Field(..., min_length=1, description="活动名称")
+    event_date: str = Field(..., min_length=1, description="举办日期 YYYY-MM-DD")
+    location: str = Field(..., min_length=1, description="举办地点")
+    max_attendees: int = Field(..., gt=0, description="人数上限")
+    remark: str = Field(default="", description="活动备注")
+
+
+class EventCreate(EventBase):
+    """创建活动。"""
+
+
+class EventUpdate(EventBase):
+    """更新活动。"""
+
+
+class EventResponse(EventBase):
+    """活动响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}
