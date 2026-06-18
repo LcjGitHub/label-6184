@@ -152,7 +152,20 @@ export default function PinListPage() {
       <Tbody>
         {pins.map((pin) => (
           <Tr key={pin.id} _hover={{ bg: "gray.50" }}>
-            <Td fontWeight="medium">{pin.pattern_description}</Td>
+            <Td fontWeight="medium">
+              <RouterLink
+                to={`/pins/${pin.id}`}
+                style={{ color: "teal", textDecoration: "none" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.textDecoration = "underline";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.textDecoration = "none";
+                }}
+              >
+                {pin.pattern_description}
+              </RouterLink>
+            </Td>
             <Td>{pin.source}</Td>
             <Td>{pin.exchange_partner}</Td>
             <Td>{pin.exchange_date}</Td>

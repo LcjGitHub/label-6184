@@ -2,6 +2,7 @@ import { Box, Container, Heading, Tab, TabList, Tabs } from "@chakra-ui/react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import ContactListPage from "./pages/ContactListPage";
 import EventListPage from "./pages/EventListPage";
+import PinDetailPage from "./pages/PinDetailPage";
 import PinEditPage from "./pages/PinEditPage";
 import PinListPage from "./pages/PinListPage";
 import SeriesListPage from "./pages/SeriesListPage";
@@ -79,6 +80,12 @@ export default function App() {
             <>
               <AppTabs />
               <PinEditPage />
+            </>
+          } />
+          <Route path="/pins/:id" element={
+            <>
+              <AppTabs />
+              <PinDetailPage />
             </>
           } />
           <Route path="/pins/:id/edit" element={
