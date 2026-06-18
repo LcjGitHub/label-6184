@@ -59,7 +59,7 @@ export default function SeriesListPage() {
   const [loading, setLoading] = useState(true);
   const [editingSeries, setEditingSeries] = useState<Series | null>(null);
   const [deletingSeries, setDeletingSeries] = useState<Series | null>(null);
-  const [editLoading, setEditLoading] = useState(false);
+  const [editingRowId, setEditingRowId] = useState<number | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const toast = useToast();
   const editDialog = useDisclosure();
@@ -108,7 +108,7 @@ export default function SeriesListPage() {
    * 打开编辑弹窗，先调用后端查询单条接口再回填表单
    */
   const handleEdit = async (series: Series) => {
-    setEditLoading(true);
+    setEditingRowId(series.id);
     try {
       const fresh = await fetchOneSeries(series.id);
       setEditingSeries(fresh);
@@ -124,7 +124,7 @@ export default function SeriesListPage() {
         duration: 3000,
       });
     } finally {
-      setEditLoading(false);
+      setEditingRowId(null);
     }
   };
 
@@ -198,7 +198,7 @@ export default function SeriesListPage() {
           leftIcon={<FiPlus />}
           colorScheme="teal"
           onClick={handleAdd}
-          isLoading={editLoading}
+          isLoading={editingRowId !== null}
           loadingText="加载中"
         >
           新增系列
@@ -235,7 +235,7 @@ export default function SeriesListPage() {
                       size="sm"
                       variant="ghost"
                       colorScheme="teal"
-                      isLoading={editLoading}
+                      isLoading={editingRowId === series.id}
                       onClick={() => handleEdit(series)}
                     />
                     <IconButton

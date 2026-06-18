@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/contacts.ts","./src/api/pins.ts","./src/api/series.ts","./src/pages/contactlistpage.tsx","./src/pages/pineditpage.tsx","./src/pages/pinlistpage.tsx","./src/pages/serieslistpage.tsx","./src/types/contact.ts","./src/types/pin.ts","./src/types/series.ts"],"version":"5.9.3"}
