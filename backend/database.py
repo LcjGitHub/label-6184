@@ -1,0 +1,91 @@
+"""SQLite 数据库连接与初始化。"""
+
+import sqlite3
+from pathlib import Path
+
+DB_PATH = Path(__file__).resolve().parent / "data" / "pins.db"
+
+SEED_PINS = [
+    {
+        "pattern_description": "迪士尼米奇头像珐琅徽章",
+        "source": "上海迪士尼园区商店",
+        "exchange_partner": "来自东京的交换者 Ken",
+        "exchange_date": "2025-03-15",
+        "worn": True,
+    },
+    {
+        "pattern_description": "哈利波特霍格沃茨校徽金属 pin",
+        "source": "环球影城限定款",
+        "exchange_partner": "北京 pin 爱好者 @小鹿",
+        "exchange_date": "2025-04-02",
+        "worn": False,
+    },
+    {
+        "pattern_description": "2024 奥运会五环纪念徽章",
+        "source": "奥运官方授权经销商",
+        "exchange_partner": "法国交换者 Marie",
+        "exchange_date": "2024-08-10",
+        "worn": True,
+    },
+    {
+        "pattern_description": "宝可梦皮卡丘渐变烤漆 pin",
+        "source": "任天堂旗舰店",
+        "exchange_partner": "成都漫展现场交换",
+        "exchange_date": "2025-01-20",
+        "worn": False,
+    },
+    {
+        "pattern_description": "故宫博物院千里江山图系列",
+        "source": "故宫文创官方",
+        "exchange_partner": "杭州收藏家阿明",
+        "exchange_date": "2025-05-08",
+        "worn": True,
+    },
+]
+
+
+def get_connection() -> sqlite3.Connection:
+    """获取 SQLite 连接，启用 Row 工厂便于字典访问。"""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db() -> None:
+    """创建表并在空库时写入 seed 数据。"""
+    conn = get_connection()
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS pins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pattern_description TEXT NOT NULL,
+                source TEXT NOT NULL,
+                exchange_partner TEXT NOT NULL,
+                exchange_date TEXT NOT NULL,
+                worn INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        count = conn.execute("SELECT COUNT(*) FROM pins").fetchone()[0]
+        if count == 0:
+            for pin in SEED_PINS:
+                conn.execute(
+                    """
+                    INSERT INTO pins (
+                        pattern_description, source, exchange_partner,
+                        exchange_date, worn
+                    ) VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        pin["pattern_description"],
+                        pin["source"],
+                        pin["exchange_partner"],
+                        pin["exchange_date"],
+                        1 if pin["worn"] else 0,
+                    ),
+                )
+        conn.commit()
+    finally:
+        conn.close()
