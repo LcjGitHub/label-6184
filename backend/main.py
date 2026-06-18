@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse
+from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse, WishCreate, WishResponse, WishUpdate
 
 app = FastAPI(title="Pin Exchange API", version="1.0.0")
 
@@ -66,6 +66,17 @@ def row_to_wearing_history(row) -> WearingHistoryResponse:
         wear_date=row["wear_date"],
         occasion=row["occasion"],
         remarks=row["remarks"],
+    )
+
+
+def row_to_wish(row) -> WishResponse:
+    """将 SQLite Row 转为愿望清单响应模型。"""
+    return WishResponse(
+        id=row["id"],
+        pattern_description=row["pattern_description"],
+        expected_source=row["expected_source"],
+        priority=row["priority"],
+        achieved=bool(row["achieved"]),
     )
 
 
@@ -406,5 +417,110 @@ def delete_wearing_history(history_id: int) -> None:
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="佩戴记录不存在")
+    finally:
+        conn.close()
+
+
+@app.get("/api/wishes", response_model=List[WishResponse])
+def list_wishes() -> List[WishResponse]:
+    """获取全部愿望清单。"""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT * FROM wishes
+            ORDER BY
+                CASE priority
+                    WHEN '高' THEN 1
+                    WHEN '中' THEN 2
+                    WHEN '低' THEN 3
+                END,
+                id DESC
+            """
+        ).fetchall()
+        return [row_to_wish(row) for row in rows]
+    finally:
+        conn.close()
+
+
+@app.get("/api/wishes/{wish_id}", response_model=WishResponse)
+def get_wish(wish_id: int) -> WishResponse:
+    """获取单条愿望。"""
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT * FROM wishes WHERE id = ?", (wish_id,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="愿望不存在")
+        return row_to_wish(row)
+    finally:
+        conn.close()
+
+
+@app.post("/api/wishes", response_model=WishResponse, status_code=201)
+def create_wish(payload: WishCreate) -> WishResponse:
+    """新增愿望。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO wishes (
+                pattern_description, expected_source, priority, achieved
+            ) VALUES (?, ?, ?, ?)
+            """,
+            (
+                payload.pattern_description,
+                payload.expected_source,
+                payload.priority,
+                1 if payload.achieved else 0,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM wishes WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        return row_to_wish(row)
+    finally:
+        conn.close()
+
+
+@app.put("/api/wishes/{wish_id}", response_model=WishResponse)
+def update_wish(wish_id: int, payload: WishUpdate) -> WishResponse:
+    """更新愿望。"""
+    conn = get_connection()
+    try:
+        existing = conn.execute("SELECT id FROM wishes WHERE id = ?", (wish_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="愿望不存在")
+        conn.execute(
+            """
+            UPDATE wishes SET
+                pattern_description = ?,
+                expected_source = ?,
+                priority = ?,
+                achieved = ?
+            WHERE id = ?
+            """,
+            (
+                payload.pattern_description,
+                payload.expected_source,
+                payload.priority,
+                1 if payload.achieved else 0,
+                wish_id,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM wishes WHERE id = ?", (wish_id,)).fetchone()
+        return row_to_wish(row)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/wishes/{wish_id}", status_code=204)
+def delete_wish(wish_id: int) -> None:
+    """删除愿望。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute("DELETE FROM wishes WHERE id = ?", (wish_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="愿望不存在")
     finally:
         conn.close()

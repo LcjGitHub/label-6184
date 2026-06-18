@@ -97,3 +97,28 @@ class WearingHistoryResponse(WearingHistoryBase):
     pin_id: int
 
     model_config = {"from_attributes": True}
+
+
+class WishBase(BaseModel):
+    """愿望清单公共字段。"""
+
+    pattern_description: str = Field(..., min_length=1, description="目标图案描述")
+    expected_source: str = Field(..., min_length=1, description="期望来源")
+    priority: str = Field(..., pattern="^(高|中|低)$", description="优先级：高/中/低")
+    achieved: bool = Field(default=False, description="是否已达成")
+
+
+class WishCreate(WishBase):
+    """创建愿望。"""
+
+
+class WishUpdate(WishBase):
+    """更新愿望。"""
+
+
+class WishResponse(WishBase):
+    """愿望响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}

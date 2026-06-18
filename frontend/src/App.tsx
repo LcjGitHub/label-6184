@@ -4,26 +4,32 @@ import ContactListPage from "./pages/ContactListPage";
 import PinEditPage from "./pages/PinEditPage";
 import PinListPage from "./pages/PinListPage";
 import SeriesListPage from "./pages/SeriesListPage";
+import WishEditPage from "./pages/WishEditPage";
+import WishListPage from "./pages/WishListPage";
 
 function AppTabs() {
   const location = useLocation();
   const navigate = useNavigate();
   const isContacts = location.pathname.startsWith("/contacts");
   const isSeries = location.pathname.startsWith("/series");
+  const isWishes = location.pathname.startsWith("/wishes");
 
   const handleTabChange = (index: number) => {
     if (index === 0) {
       navigate("/");
     } else if (index === 1) {
       navigate("/contacts");
-    } else {
+    } else if (index === 2) {
       navigate("/series");
+    } else {
+      navigate("/wishes");
     }
   };
 
   let tabIndex = 0;
   if (isContacts) tabIndex = 1;
   if (isSeries) tabIndex = 2;
+  if (isWishes) tabIndex = 3;
 
   return (
     <Tabs
@@ -37,6 +43,7 @@ function AppTabs() {
         <Tab>徽章交换记录</Tab>
         <Tab>交换对象通讯录</Tab>
         <Tab>徽章系列分类</Tab>
+        <Tab>愿望清单</Tab>
       </TabList>
     </Tabs>
   );
@@ -92,6 +99,27 @@ export default function App() {
               </>
             }
           />
+          <Route
+            path="/wishes"
+            element={
+              <>
+                <AppTabs />
+                <WishListPage />
+              </>
+            }
+          />
+          <Route path="/wishes/new" element={
+            <>
+              <AppTabs />
+              <WishEditPage />
+            </>
+          } />
+          <Route path="/wishes/:id/edit" element={
+            <>
+              <AppTabs />
+              <WishEditPage />
+            </>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Container>

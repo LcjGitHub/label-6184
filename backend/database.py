@@ -104,6 +104,27 @@ SEED_WEARING_HISTORY = [
     },
 ]
 
+SEED_WISHES = [
+    {
+        "pattern_description": "星黛露春日限定珐琅徽章",
+        "expected_source": "上海迪士尼乐园2026春季新品",
+        "priority": "高",
+        "achieved": False,
+    },
+    {
+        "pattern_description": "漫威钢铁侠反应堆发光pin",
+        "expected_source": "漫威官方旗舰店限定款",
+        "priority": "中",
+        "achieved": False,
+    },
+    {
+        "pattern_description": "宫崎骏龙猫橡子共和国徽章",
+        "expected_source": "日本三鹰之森吉卜力美术馆",
+        "priority": "低",
+        "achieved": True,
+    },
+]
+
 
 def get_connection() -> sqlite3.Connection:
     """获取 SQLite 连接，启用 Row 工厂便于字典访问。"""
@@ -159,6 +180,17 @@ def init_db() -> None:
                 occasion TEXT NOT NULL,
                 remarks TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (pin_id) REFERENCES pins(id) ON DELETE CASCADE
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS wishes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pattern_description TEXT NOT NULL,
+                expected_source TEXT NOT NULL,
+                priority TEXT NOT NULL DEFAULT '中',
+                achieved INTEGER NOT NULL DEFAULT 0
             )
             """
         )
@@ -225,6 +257,22 @@ def init_db() -> None:
                         wh["wear_date"],
                         wh["occasion"],
                         wh["remarks"],
+                    ),
+                )
+        wish_count = conn.execute("SELECT COUNT(*) FROM wishes").fetchone()[0]
+        if wish_count == 0:
+            for wish in SEED_WISHES:
+                conn.execute(
+                    """
+                    INSERT INTO wishes (
+                        pattern_description, expected_source, priority, achieved
+                    ) VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        wish["pattern_description"],
+                        wish["expected_source"],
+                        wish["priority"],
+                        1 if wish["achieved"] else 0,
                     ),
                 )
         conn.commit()
