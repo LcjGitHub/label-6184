@@ -20,3 +20,22 @@ export interface PinFormData {
   exchange_date: string;
   worn: boolean;
 }
+
+/**
+ * 排序字段
+ */
+export type PinSortField = "exchange_date" | "source";
+
+/**
+ * 排序方向
+ */
+export type SortOrder = "asc" | "desc";
+
+/**
+ * 列表查询参数
+ */
+export interface PinListQuery {
+  keyword?: string;
+  sortBy?: PinSortField;
+  sortOrder?: SortOrder;
+}

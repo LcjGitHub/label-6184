@@ -1,17 +1,25 @@
 import axios from "axios";
-import type { Pin, PinFormData } from "../types/pin";
+import type { Pin, PinFormData, PinListQuery } from "../types/pin";
 
 const api = axios.create({
   baseURL: "/api",
 });
 
 /**
- * 获取全部徽章记录，支持关键词搜索
+ * 获取全部徽章记录，支持关键词搜索和排序
  */
-export async function fetchPins(keyword?: string): Promise<Pin[]> {
-  const { data } = await api.get<Pin[]>("/pins", {
-    params: keyword ? { keyword } : {},
-  });
+export async function fetchPins(query?: PinListQuery): Promise<Pin[]> {
+  const params: Record<string, string> = {};
+  if (query?.keyword) {
+    params.keyword = query.keyword;
+  }
+  if (query?.sortBy) {
+    params.sort_by = query.sortBy;
+  }
+  if (query?.sortOrder) {
+    params.sort_order = query.sortOrder;
+  }
+  const { data } = await api.get<Pin[]>("/pins", { params });
   return data;
 }
 

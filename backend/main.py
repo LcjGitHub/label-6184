@@ -92,22 +92,33 @@ def row_to_event(row) -> EventResponse:
     )
 
 
+ALLOWED_SORT_FIELDS = {"exchange_date", "source", "id"}
+ALLOWED_SORT_ORDERS = {"asc", "desc"}
+
+
 @app.get("/api/pins", response_model=List[PinResponse])
 def list_pins(
     keyword: Optional[str] = Query(None, description="关键词，按图案描述或交换对象模糊匹配"),
+    sort_by: Optional[str] = Query(None, description="排序字段，支持 exchange_date、source"),
+    sort_order: Optional[str] = Query(None, description="排序方向，asc 升序或 desc 降序"),
 ) -> List[PinResponse]:
-    """获取全部徽章交换记录，支持关键词搜索。"""
+    """获取全部徽章交换记录，支持关键词搜索和排序。"""
     conn = get_connection()
     try:
         trimmed_keyword = keyword.strip() if keyword else None
+        safe_sort_by = sort_by if sort_by in ALLOWED_SORT_FIELDS else "exchange_date"
+        safe_sort_order = sort_order.lower() if sort_order and sort_order.lower() in ALLOWED_SORT_ORDERS else "desc"
+
+        order_clause = f"ORDER BY {safe_sort_by} {safe_sort_order}, id DESC"
+
         if trimmed_keyword:
             like_pattern = f"%{trimmed_keyword}%"
             rows = conn.execute(
-                "SELECT * FROM pins WHERE pattern_description LIKE ? OR exchange_partner LIKE ? ORDER BY exchange_date DESC, id DESC",
+                f"SELECT * FROM pins WHERE pattern_description LIKE ? OR exchange_partner LIKE ? {order_clause}",
                 (like_pattern, like_pattern),
             ).fetchall()
         else:
-            rows = conn.execute("SELECT * FROM pins ORDER BY exchange_date DESC, id DESC").fetchall()
+            rows = conn.execute(f"SELECT * FROM pins {order_clause}").fetchall()
         return [row_to_pin(row) for row in rows]
     finally:
         conn.close()

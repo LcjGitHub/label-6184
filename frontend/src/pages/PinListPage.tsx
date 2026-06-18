@@ -20,9 +20,9 @@ import {
   Tr,
   useToast,
 } from "@chakra-ui/react";
-import { FiEdit2, FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiSearch, FiTrash2, FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { deletePin, fetchPins } from "../api/pins";
-import type { Pin } from "../types/pin";
+import type { Pin, PinSortField, SortOrder } from "../types/pin";
 
 /**
  * 徽章交换记录列表页
@@ -31,41 +31,66 @@ export default function PinListPage() {
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [sortBy, setSortBy] = useState<PinSortField>("exchange_date");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToast();
 
-  const loadPins = useCallback(async (keyword?: string) => {
-    setLoading(true);
-    try {
-      const trimmed = keyword?.trim();
-      const data = await fetchPins(trimmed || undefined);
-      setPins(data);
-    } catch {
-      toast({
-        title: "加载失败",
-        description: "请确认后端服务已在 6000 端口启动",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  const loadPins = useCallback(
+    async (keyword?: string, sortField?: PinSortField, sortDir?: SortOrder) => {
+      setLoading(true);
+      try {
+        const trimmed = keyword?.trim();
+        const data = await fetchPins({
+          keyword: trimmed || undefined,
+          sortBy: sortField,
+          sortOrder: sortDir,
+        });
+        setPins(data);
+      } catch {
+        toast({
+          title: "加载失败",
+          description: "请确认后端服务已在 6000 端口启动",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [toast]
+  );
 
   useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     debounceTimerRef.current = setTimeout(() => {
-      loadPins(searchKeyword);
+      loadPins(searchKeyword, sortBy, sortOrder);
     }, 300);
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [searchKeyword, loadPins]);
+  }, [searchKeyword, sortBy, sortOrder, loadPins]);
+
+  const handleSort = (field: PinSortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
+  };
+
+  const renderSortIcon = (field: PinSortField) => {
+    if (sortBy !== field) {
+      return <FiChevronUp style={{ opacity: 0.3 }} />;
+    }
+    return sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />;
+  };
 
   /**
    * 删除指定记录并刷新列表
@@ -77,7 +102,7 @@ export default function PinListPage() {
     try {
       await deletePin(pin.id);
       toast({ title: "已删除", status: "success", duration: 2000 });
-      await loadPins(searchKeyword);
+      await loadPins(searchKeyword, sortBy, sortOrder);
     } catch {
       toast({ title: "删除失败", status: "error", duration: 3000 });
     }
@@ -186,9 +211,33 @@ export default function PinListPage() {
           <Thead bg="gray.100">
             <Tr>
               <Th>图案描述</Th>
-              <Th>来源</Th>
+              <Th
+                cursor="pointer"
+                userSelect="none"
+                onClick={() => handleSort("source")}
+                _hover={{ bg: "gray.200" }}
+              >
+                <Flex align="center" gap={1}>
+                  来源
+                  <Box as="span" display="inline-flex">
+                    {renderSortIcon("source")}
+                  </Box>
+                </Flex>
+              </Th>
               <Th>交换对象</Th>
-              <Th>日期</Th>
+              <Th
+                cursor="pointer"
+                userSelect="none"
+                onClick={() => handleSort("exchange_date")}
+                _hover={{ bg: "gray.200" }}
+              >
+                <Flex align="center" gap={1}>
+                  日期
+                  <Box as="span" display="inline-flex">
+                    {renderSortIcon("exchange_date")}
+                  </Box>
+                </Flex>
+              </Th>
               <Th>佩戴过</Th>
               <Th textAlign="right">操作</Th>
             </Tr>
