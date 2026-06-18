@@ -53,8 +53,18 @@ export default function App() {
               </>
             }
           />
-          <Route path="/pins/new" element={<PinEditPage />} />
-          <Route path="/pins/:id/edit" element={<PinEditPage />} />
+          <Route path="/pins/new" element={
+            <>
+              <AppTabs />
+              <PinEditPage />
+            </>
+          } />
+          <Route path="/pins/:id/edit" element={
+            <>
+              <AppTabs />
+              <PinEditPage />
+            </>
+          } />
           <Route
             path="/contacts"
             element={

@@ -1,6 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Box,
   Button,
   Flex,
@@ -33,6 +39,7 @@ import { FiEdit2, FiPlus, FiTrash2 } from "react-icons/fi";
 import {
   createContact,
   deleteContact,
+  fetchContact,
   fetchContacts,
   updateContact,
 } from "../api/contacts";
@@ -52,8 +59,12 @@ export default function ContactListPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const editDialog = useDisclosure();
+  const deleteDialog = useDisclosure();
 
   const {
     register,
@@ -91,35 +102,65 @@ export default function ContactListPage() {
   const handleAdd = () => {
     setEditingContact(null);
     reset(defaultValues);
-    onOpen();
+    editDialog.onOpen();
   };
 
   /**
-   * 打开编辑弹窗并填充数据
+   * 打开编辑弹窗，先调用后端查询单条接口再回填表单
    */
-  const handleEdit = (contact: Contact) => {
-    setEditingContact(contact);
-    setValue("nickname", contact.nickname);
-    setValue("city", contact.city);
-    setValue("contact_info", contact.contact_info);
-    setValue("remark", contact.remark);
-    onOpen();
-  };
-
-  /**
-   * 删除指定联系人并刷新列表
-   */
-  const handleDelete = async (contact: Contact) => {
-    if (!window.confirm(`确定删除联系人「${contact.nickname}」？`)) {
-      return;
-    }
+  const handleEdit = async (contact: Contact) => {
+    setEditLoading(true);
     try {
-      await deleteContact(contact.id);
+      const fresh = await fetchContact(contact.id);
+      setEditingContact(fresh);
+      setValue("nickname", fresh.nickname);
+      setValue("city", fresh.city);
+      setValue("contact_info", fresh.contact_info);
+      setValue("remark", fresh.remark);
+      editDialog.onOpen();
+    } catch {
+      toast({
+        title: "加载失败",
+        description: "联系人不存在或后端服务异常",
+        status: "error",
+        duration: 3000,
+      });
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  /**
+   * 打开删除确认对话框
+   */
+  const handleDeleteRequest = (contact: Contact) => {
+    setDeletingContact(contact);
+    deleteDialog.onOpen();
+  };
+
+  /**
+   * 确认删除联系人并刷新列表
+   */
+  const handleDeleteConfirm = async () => {
+    if (!deletingContact) return;
+    try {
+      await deleteContact(deletingContact.id);
       toast({ title: "已删除", status: "success", duration: 2000 });
+      deleteDialog.onClose();
       await loadContacts();
     } catch {
       toast({ title: "删除失败", status: "error", duration: 3000 });
+    } finally {
+      setDeletingContact(null);
     }
+  };
+
+  /**
+   * 取消删除
+   */
+  const handleDeleteCancel = () => {
+    setDeletingContact(null);
+    deleteDialog.onClose();
   };
 
   /**
@@ -134,7 +175,7 @@ export default function ContactListPage() {
         await createContact(data);
         toast({ title: "已创建", status: "success", duration: 2000 });
       }
-      onClose();
+      editDialog.onClose();
       await loadContacts();
     } catch {
       toast({ title: "保存失败", status: "error", duration: 3000 });
@@ -159,6 +200,8 @@ export default function ContactListPage() {
           leftIcon={<FiPlus />}
           colorScheme="teal"
           onClick={handleAdd}
+          isLoading={editLoading}
+          loadingText="加载中"
         >
           新增联系人
         </Button>
@@ -194,6 +237,7 @@ export default function ContactListPage() {
                       size="sm"
                       variant="ghost"
                       colorScheme="teal"
+                      isLoading={editLoading}
                       onClick={() => handleEdit(contact)}
                     />
                     <IconButton
@@ -203,7 +247,7 @@ export default function ContactListPage() {
                       variant="ghost"
                       colorScheme="red"
                       ml={1}
-                      onClick={() => handleDelete(contact)}
+                      onClick={() => handleDeleteRequest(contact)}
                     />
                   </Td>
                 </Tr>
@@ -213,7 +257,7 @@ export default function ContactListPage() {
         </Box>
       )}
 
-      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <Modal isOpen={editDialog.isOpen} onClose={editDialog.onClose} size="lg">
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
@@ -269,7 +313,7 @@ export default function ContactListPage() {
               </Box>
             </ModalBody>
             <ModalFooter gap={3}>
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={editDialog.onClose}>
                 取消
               </Button>
               <Button
@@ -284,6 +328,32 @@ export default function ContactListPage() {
           </form>
         </ModalContent>
       </Modal>
+
+      <AlertDialog
+        isOpen={deleteDialog.isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={handleDeleteCancel}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              确认删除
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              确定删除联系人「{deletingContact?.nickname}」吗？此操作不可撤销。
+            </AlertDialogBody>
+            <AlertDialogFooter gap={3}>
+              <Button ref={cancelRef} variant="outline" onClick={handleDeleteCancel}>
+                取消
+              </Button>
+              <Button colorScheme="red" onClick={handleDeleteConfirm}>
+                删除
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 }
