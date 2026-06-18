@@ -27,3 +27,28 @@ class PinResponse(PinBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class ContactBase(BaseModel):
+    """交换对象联系人公共字段。"""
+
+    nickname: str = Field(..., min_length=1, description="昵称")
+    city: str = Field(..., min_length=1, description="所在城市")
+    contact_info: str = Field(..., min_length=1, description="联系方式")
+    remark: str = Field(default="", description="备注")
+
+
+class ContactCreate(ContactBase):
+    """新增联系人。"""
+
+
+class ContactUpdate(ContactBase):
+    """更新联系人。"""
+
+
+class ContactResponse(ContactBase):
+    """联系人响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}

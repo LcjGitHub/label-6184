@@ -43,6 +43,27 @@ SEED_PINS = [
     },
 ]
 
+SEED_CONTACTS = [
+    {
+        "nickname": "Ken",
+        "city": "东京",
+        "contact_info": "ken_pin@example.jp",
+        "remark": "迪士尼徽章收藏家，已交换多次",
+    },
+    {
+        "nickname": "小鹿",
+        "city": "北京",
+        "contact_info": "xiaolu_wechat_2024",
+        "remark": "哈利波特主题 pin 爱好者",
+    },
+    {
+        "nickname": "Marie",
+        "city": "巴黎",
+        "contact_info": "marie.collect@example.fr",
+        "remark": "奥运纪念徽章系列交换伙伴",
+    },
+]
+
 
 def get_connection() -> sqlite3.Connection:
     """获取 SQLite 连接，启用 Row 工厂便于字典访问。"""
@@ -68,8 +89,19 @@ def init_db() -> None:
             )
             """
         )
-        count = conn.execute("SELECT COUNT(*) FROM pins").fetchone()[0]
-        if count == 0:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS contacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nickname TEXT NOT NULL,
+                city TEXT NOT NULL,
+                contact_info TEXT NOT NULL,
+                remark TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
+        pin_count = conn.execute("SELECT COUNT(*) FROM pins").fetchone()[0]
+        if pin_count == 0:
             for pin in SEED_PINS:
                 conn.execute(
                     """
@@ -84,6 +116,22 @@ def init_db() -> None:
                         pin["exchange_partner"],
                         pin["exchange_date"],
                         1 if pin["worn"] else 0,
+                    ),
+                )
+        contact_count = conn.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]
+        if contact_count == 0:
+            for contact in SEED_CONTACTS:
+                conn.execute(
+                    """
+                    INSERT INTO contacts (
+                        nickname, city, contact_info, remark
+                    ) VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        contact["nickname"],
+                        contact["city"],
+                        contact["contact_info"],
+                        contact["remark"],
                     ),
                 )
         conn.commit()
