@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
+  Alert,
+  AlertDescription,
   AlertDialog,
   AlertDialogBody,
   AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogOverlay,
+  AlertIcon,
+  AlertTitle,
   Badge,
   Box,
   Button,
@@ -36,7 +40,7 @@ import {
   useDisclosure,
   useToast,
 } from "@chakra-ui/react";
-import { FiCalendar, FiEdit2, FiMapPin, FiPlus, FiTrash2, FiUsers } from "react-icons/fi";
+import { FiCalendar, FiEdit2, FiMapPin, FiPlus, FiRefreshCw, FiTrash2, FiUsers } from "react-icons/fi";
 import {
   createEvent,
   deleteEvent,
@@ -55,14 +59,26 @@ const defaultValues: EventFormData = {
 };
 
 /**
+ * 判断是否是近期活动（今天起30天内）
+ */
+function isUpcomingEvent(dateStr: string): boolean {
+  const eventDate = new Date(dateStr);
+  const today = new Date();
+  const diffTime = eventDate.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays >= 0 && diffDays <= 30;
+}
+
+/**
  * 线下交换活动列表页
  */
 export default function EventListPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
-  const [editLoading, setEditLoading] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const toast = useToast();
   const editDialog = useDisclosure();
@@ -78,10 +94,12 @@ export default function EventListPage() {
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const data = await fetchEvents();
       setEvents(data);
     } catch {
+      setError(true);
       toast({
         title: "加载失败",
         description: "请确认后端服务已在 6000 端口启动",
@@ -99,6 +117,13 @@ export default function EventListPage() {
   }, [loadEvents]);
 
   /**
+   * 筛选出近期活动（今天起30天内）
+   */
+  const upcomingEvents = useMemo(() => {
+    return events.filter((event) => isUpcomingEvent(event.event_date));
+  }, [events]);
+
+  /**
    * 打开新增弹窗
    */
   const handleAdd = () => {
@@ -111,7 +136,7 @@ export default function EventListPage() {
    * 打开编辑弹窗，先调用后端查询单条接口再回填表单
    */
   const handleEdit = async (event: Event) => {
-    setEditLoading(true);
+    setEditingEventId(event.id);
     try {
       const fresh = await fetchEvent(event.id);
       setEditingEvent(fresh);
@@ -129,7 +154,7 @@ export default function EventListPage() {
         duration: 3000,
       });
     } finally {
-      setEditLoading(false);
+      setEditingEventId(null);
     }
   };
 
@@ -197,23 +222,39 @@ export default function EventListPage() {
     });
   };
 
-  /**
-   * 判断是否是近期活动（未来30天内）
-   */
-  const isUpcoming = (dateStr: string) => {
-    const eventDate = new Date(dateStr);
-    const today = new Date();
-    const diffDays = Math.ceil(
-      (eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    return diffDays >= 0 && diffDays <= 30;
-  };
-
   if (loading) {
     return (
       <Flex justify="center" py={12}>
         <Spinner size="lg" color="teal.500" />
       </Flex>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <Flex justify="space-between" align="center" mb={6}>
+          <Heading as="h2" size="md">
+            线下交换活动
+          </Heading>
+          <Button
+            leftIcon={<FiRefreshCw />}
+            colorScheme="teal"
+            onClick={loadEvents}
+          >
+            重新加载
+          </Button>
+        </Flex>
+        <Alert status="error" borderRadius="md">
+          <AlertIcon />
+          <Box>
+            <AlertTitle>加载失败</AlertTitle>
+            <AlertDescription>
+              无法连接到后端服务，请确认后端服务已在 6000 端口启动后点击「重新加载」。
+            </AlertDescription>
+          </Box>
+        </Alert>
+      </Box>
     );
   }
 
@@ -227,20 +268,18 @@ export default function EventListPage() {
           leftIcon={<FiPlus />}
           colorScheme="teal"
           onClick={handleAdd}
-          isLoading={editLoading}
-          loadingText="加载中"
         >
           新增活动
         </Button>
       </Flex>
 
-      {events.length === 0 ? (
+      {upcomingEvents.length === 0 ? (
         <Text color="gray.500" py={12} textAlign="center">
-          暂无活动，点击「新增活动」添加第一场线下交换会。
+          暂无近期活动，点击「新增活动」添加第一场线下交换会。
         </Text>
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-          {events.map((event) => (
+          {upcomingEvents.map((event) => (
             <Card
               key={event.id}
               variant="outline"
@@ -253,11 +292,9 @@ export default function EventListPage() {
                     <Heading as="h3" size="sm" mb={2} color="teal.700">
                       {event.name}
                     </Heading>
-                    {isUpcoming(event.event_date) && (
-                      <Badge colorScheme="green" variant="subtle" mb={2}>
-                        近期活动
-                      </Badge>
-                    )}
+                    <Badge colorScheme="green" variant="subtle" mb={2}>
+                      近期活动
+                    </Badge>
                   </Box>
                 </Flex>
               </CardHeader>
@@ -303,7 +340,7 @@ export default function EventListPage() {
                   size="sm"
                   variant="ghost"
                   colorScheme="teal"
-                  isLoading={editLoading}
+                  isLoading={editingEventId === event.id}
                   onClick={() => handleEdit(event)}
                 />
                 <IconButton
