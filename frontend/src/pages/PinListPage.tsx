@@ -10,6 +10,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Link,
   Spinner,
   Table,
   Tbody,
@@ -153,18 +154,15 @@ export default function PinListPage() {
         {pins.map((pin) => (
           <Tr key={pin.id} _hover={{ bg: "gray.50" }}>
             <Td fontWeight="medium">
-              <RouterLink
+              <Link
+                as={RouterLink}
                 to={`/pins/${pin.id}`}
-                style={{ color: "teal", textDecoration: "none" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.textDecoration = "underline";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.textDecoration = "none";
-                }}
+                color="teal.500"
+                textDecoration="none"
+                _hover={{ textDecoration: "underline" }}
               >
                 {pin.pattern_description}
-              </RouterLink>
+              </Link>
             </Td>
             <Td>{pin.source}</Td>
             <Td>{pin.exchange_partner}</Td>
