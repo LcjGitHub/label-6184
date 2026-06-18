@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate
+from schemas import ContactCreate, ContactResponse, ContactUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate
 
 app = FastAPI(title="Pin Exchange API", version="1.0.0")
 
@@ -45,6 +45,16 @@ def row_to_contact(row) -> ContactResponse:
         city=row["city"],
         contact_info=row["contact_info"],
         remark=row["remark"],
+    )
+
+
+def row_to_series(row) -> SeriesResponse:
+    """将 SQLite Row 转为系列响应模型。"""
+    return SeriesResponse(
+        id=row["id"],
+        name=row["name"],
+        brand=row["brand"],
+        description=row["description"],
     )
 
 
@@ -236,5 +246,96 @@ def delete_contact(contact_id: int) -> None:
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="联系人不存在")
+    finally:
+        conn.close()
+
+
+@app.get("/api/series", response_model=List[SeriesResponse])
+def list_series() -> List[SeriesResponse]:
+    """获取全部徽章系列。"""
+    conn = get_connection()
+    try:
+        rows = conn.execute("SELECT * FROM series ORDER BY id DESC").fetchall()
+        return [row_to_series(row) for row in rows]
+    finally:
+        conn.close()
+
+
+@app.get("/api/series/{series_id}", response_model=SeriesResponse)
+def get_series(series_id: int) -> SeriesResponse:
+    """获取单条徽章系列。"""
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT * FROM series WHERE id = ?", (series_id,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="系列不存在")
+        return row_to_series(row)
+    finally:
+        conn.close()
+
+
+@app.post("/api/series", response_model=SeriesResponse, status_code=201)
+def create_series(payload: SeriesCreate) -> SeriesResponse:
+    """新增徽章系列。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO series (
+                name, brand, description
+            ) VALUES (?, ?, ?)
+            """,
+            (
+                payload.name,
+                payload.brand,
+                payload.description,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM series WHERE id = ?", (cursor.lastrowid,)).fetchone()
+        return row_to_series(row)
+    finally:
+        conn.close()
+
+
+@app.put("/api/series/{series_id}", response_model=SeriesResponse)
+def update_series(series_id: int, payload: SeriesUpdate) -> SeriesResponse:
+    """更新徽章系列。"""
+    conn = get_connection()
+    try:
+        existing = conn.execute("SELECT id FROM series WHERE id = ?", (series_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="系列不存在")
+        conn.execute(
+            """
+            UPDATE series SET
+                name = ?,
+                brand = ?,
+                description = ?
+            WHERE id = ?
+            """,
+            (
+                payload.name,
+                payload.brand,
+                payload.description,
+                series_id,
+            ),
+        )
+        conn.commit()
+        row = conn.execute("SELECT * FROM series WHERE id = ?", (series_id,)).fetchone()
+        return row_to_series(row)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/series/{series_id}", status_code=204)
+def delete_series(series_id: int) -> None:
+    """删除徽章系列。"""
+    conn = get_connection()
+    try:
+        cursor = conn.execute("DELETE FROM series WHERE id = ?", (series_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="系列不存在")
     finally:
         conn.close()

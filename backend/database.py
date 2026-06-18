@@ -64,6 +64,24 @@ SEED_CONTACTS = [
     },
 ]
 
+SEED_SERIES = [
+    {
+        "name": "迪士尼经典系列",
+        "brand": "Disney",
+        "description": "包含米奇、米妮、唐老鸭等经典迪士尼角色的徽章系列，是迪士尼乐园最受欢迎的收藏系列之一。",
+    },
+    {
+        "name": "哈利波特魔法系列",
+        "brand": "Warner Bros.",
+        "description": "以哈利波特电影为主题的徽章系列，涵盖霍格沃茨校徽、学院徽章、死亡圣器等经典元素。",
+    },
+    {
+        "name": "故宫文创系列",
+        "brand": "故宫博物院",
+        "description": "故宫博物院官方推出的文创徽章，融合千里江山图、瑞兽、龙凤等传统中国文化元素。",
+    },
+]
+
 
 def get_connection() -> sqlite3.Connection:
     """获取 SQLite 连接，启用 Row 工厂便于字典访问。"""
@@ -100,6 +118,16 @@ def init_db() -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS series (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                brand TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT ''
+            )
+            """
+        )
         pin_count = conn.execute("SELECT COUNT(*) FROM pins").fetchone()[0]
         if pin_count == 0:
             for pin in SEED_PINS:
@@ -132,6 +160,21 @@ def init_db() -> None:
                         contact["city"],
                         contact["contact_info"],
                         contact["remark"],
+                    ),
+                )
+        series_count = conn.execute("SELECT COUNT(*) FROM series").fetchone()[0]
+        if series_count == 0:
+            for series in SEED_SERIES:
+                conn.execute(
+                    """
+                    INSERT INTO series (
+                        name, brand, description
+                    ) VALUES (?, ?, ?)
+                    """,
+                    (
+                        series["name"],
+                        series["brand"],
+                        series["description"],
                     ),
                 )
         conn.commit()

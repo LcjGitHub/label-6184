@@ -3,31 +3,40 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 import ContactListPage from "./pages/ContactListPage";
 import PinEditPage from "./pages/PinEditPage";
 import PinListPage from "./pages/PinListPage";
+import SeriesListPage from "./pages/SeriesListPage";
 
 function AppTabs() {
   const location = useLocation();
   const navigate = useNavigate();
   const isContacts = location.pathname.startsWith("/contacts");
+  const isSeries = location.pathname.startsWith("/series");
 
   const handleTabChange = (index: number) => {
     if (index === 0) {
       navigate("/");
-    } else {
+    } else if (index === 1) {
       navigate("/contacts");
+    } else {
+      navigate("/series");
     }
   };
+
+  let tabIndex = 0;
+  if (isContacts) tabIndex = 1;
+  if (isSeries) tabIndex = 2;
 
   return (
     <Tabs
       variant="enclosed-colored"
       colorScheme="teal"
-      index={isContacts ? 1 : 0}
+      index={tabIndex}
       onChange={handleTabChange}
       mb={6}
     >
       <TabList>
         <Tab>徽章交换记录</Tab>
         <Tab>交换对象通讯录</Tab>
+        <Tab>徽章系列分类</Tab>
       </TabList>
     </Tabs>
   );
@@ -71,6 +80,15 @@ export default function App() {
               <>
                 <AppTabs />
                 <ContactListPage />
+              </>
+            }
+          />
+          <Route
+            path="/series"
+            element={
+              <>
+                <AppTabs />
+                <SeriesListPage />
               </>
             }
           />

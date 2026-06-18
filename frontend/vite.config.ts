@@ -8,7 +8,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:6000",
+        target: "http://127.0.0.1:6001",
         changeOrigin: true,
       },
     },

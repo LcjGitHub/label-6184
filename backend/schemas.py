@@ -52,3 +52,27 @@ class ContactResponse(ContactBase):
     id: int
 
     model_config = {"from_attributes": True}
+
+
+class SeriesBase(BaseModel):
+    """徽章系列公共字段。"""
+
+    name: str = Field(..., min_length=1, description="系列名称")
+    brand: str = Field(..., min_length=1, description="所属品牌")
+    description: str = Field(default="", description="系列简介")
+
+
+class SeriesCreate(SeriesBase):
+    """创建系列。"""
+
+
+class SeriesUpdate(SeriesBase):
+    """更新系列。"""
+
+
+class SeriesResponse(SeriesBase):
+    """系列响应。"""
+
+    id: int
+
+    model_config = {"from_attributes": True}
