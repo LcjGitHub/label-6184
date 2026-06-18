@@ -63,6 +63,10 @@ export default function PinListPage() {
   );
 
   useEffect(() => {
+    loadPins(searchKeyword, sortBy, sortOrder);
+  }, []);
+
+  useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -74,22 +78,29 @@ export default function PinListPage() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [searchKeyword, sortBy, sortOrder, loadPins]);
+  }, [searchKeyword]);
 
   const handleSort = (field: PinSortField) => {
+    let newSortBy: PinSortField = field;
+    let newSortOrder: SortOrder = "asc";
     if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("asc");
+      newSortOrder = sortOrder === "asc" ? "desc" : "asc";
     }
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    loadPins(searchKeyword, newSortBy, newSortOrder);
   };
 
   const renderSortIcon = (field: PinSortField) => {
     if (sortBy !== field) {
-      return <FiChevronUp style={{ opacity: 0.3 }} />;
+      return (
+        <Flex direction="column" lineHeight={0.7} fontSize="10px">
+          <FiChevronUp />
+          <FiChevronDown />
+        </Flex>
+      );
     }
-    return sortOrder === "asc" ? <FiChevronUp /> : <FiChevronDown />;
+    return sortOrder === "asc" ? <FiChevronUp color="teal.500" /> : <FiChevronDown color="teal.500" />;
   };
 
   /**
