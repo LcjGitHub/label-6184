@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection, init_db
-from schemas import ContactCreate, ContactResponse, ContactUpdate, EventCreate, EventResponse, EventUpdate, PinCreate, PinPatch, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse, WishCreate, WishResponse, WishUpdate
+from schemas import ContactCreate, ContactResponse, ContactUpdate, EventCreate, EventResponse, EventUpdate, PinCreate, PinResponse, PinUpdate, SeriesCreate, SeriesResponse, SeriesUpdate, WearingHistoryCreate, WearingHistoryResponse, WishCreate, WishResponse, WishUpdate
 
 app = FastAPI(title="Pin Exchange API", version="1.0.0")
 
@@ -194,39 +194,6 @@ def update_pin(pin_id: int, payload: PinUpdate) -> PinResponse:
                 1 if payload.is_favorite else 0,
                 pin_id,
             ),
-        )
-        conn.commit()
-        row = conn.execute("SELECT * FROM pins WHERE id = ?", (pin_id,)).fetchone()
-        return row_to_pin(row)
-    finally:
-        conn.close()
-
-
-@app.patch("/api/pins/{pin_id}", response_model=PinResponse)
-def patch_pin(pin_id: int, payload: PinPatch) -> PinResponse:
-    """部分更新徽章交换记录（用于切换收藏状态）。"""
-    conn = get_connection()
-    try:
-        existing = conn.execute("SELECT * FROM pins WHERE id = ?", (pin_id,)).fetchone()
-        if existing is None:
-            raise HTTPException(status_code=404, detail="记录不存在")
-
-        update_fields = []
-        update_values = []
-
-        if payload.is_favorite is not None:
-            update_fields.append("is_favorite = ?")
-            update_values.append(1 if payload.is_favorite else 0)
-
-        if not update_fields:
-            return row_to_pin(existing)
-
-        update_values.append(pin_id)
-        update_clause = ", ".join(update_fields)
-
-        conn.execute(
-            f"UPDATE pins SET {update_clause} WHERE id = ?",
-            tuple(update_values),
         )
         conn.commit()
         row = conn.execute("SELECT * FROM pins WHERE id = ?", (pin_id,)).fetchone()

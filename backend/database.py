@@ -156,8 +156,16 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    """检查表是否存在某列，不存在则追加。"""
+    cursor = conn.execute(f"PRAGMA table_info({table})")
+    columns = {row[1] for row in cursor.fetchall()}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 def init_db() -> None:
-    """创建表并在空库时写入 seed 数据。"""
+    """创建表并在空库时写入 seed 数据，支持已有表的字段迁移。"""
     conn = get_connection()
     try:
         conn.execute(
@@ -173,6 +181,7 @@ def init_db() -> None:
             )
             """
         )
+        _ensure_column(conn, "pins", "is_favorite", "INTEGER NOT NULL DEFAULT 0")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS contacts (

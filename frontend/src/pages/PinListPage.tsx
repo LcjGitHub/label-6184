@@ -22,7 +22,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { FiEdit2, FiPlus, FiSearch, FiTrash2, FiChevronUp, FiChevronDown, FiStar } from "react-icons/fi";
-import { deletePin, fetchPins, patchPin } from "../api/pins";
+import { deletePin, fetchPins, updatePin } from "../api/pins";
 import type { Pin, PinSortField, SortOrder } from "../types/pin";
 
 /**
@@ -34,6 +34,7 @@ export default function PinListPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortBy, setSortBy] = useState<PinSortField>("exchange_date");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [favoriteLoadingIds, setFavoriteLoadingIds] = useState<Set<number>>(new Set());
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToast();
 
@@ -108,9 +109,20 @@ export default function PinListPage() {
    * 切换徽章的收藏状态
    */
   const handleToggleFavorite = async (pin: Pin) => {
+    if (favoriteLoadingIds.has(pin.id)) {
+      return;
+    }
     try {
+      setFavoriteLoadingIds((prev) => new Set(prev).add(pin.id));
       const newFavorite = !pin.is_favorite;
-      const updatedPin = await patchPin(pin.id, { is_favorite: newFavorite });
+      const updatedPin = await updatePin(pin.id, {
+        pattern_description: pin.pattern_description,
+        source: pin.source,
+        exchange_partner: pin.exchange_partner,
+        exchange_date: pin.exchange_date,
+        worn: pin.worn,
+        is_favorite: newFavorite,
+      });
       setPins((prev) =>
         prev.map((p) => (p.id === pin.id ? updatedPin : p))
       );
@@ -121,6 +133,12 @@ export default function PinListPage() {
       });
     } catch {
       toast({ title: "操作失败", status: "error", duration: 3000 });
+    } finally {
+      setFavoriteLoadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(pin.id);
+        return next;
+      });
     }
   };
 
@@ -182,6 +200,8 @@ export default function PinListPage() {
                 color={pin.is_favorite ? "yellow.500" : "gray.400"}
                 onClick={() => handleToggleFavorite(pin)}
                 fill={pin.is_favorite ? "currentColor" : "none"}
+                isLoading={favoriteLoadingIds.has(pin.id)}
+                isDisabled={favoriteLoadingIds.has(pin.id)}
               />
             </Td>
             <Td fontWeight="medium">

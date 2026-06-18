@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Pin, PinFormData, PinListQuery, PinPatchData } from "../types/pin";
+import type { Pin, PinFormData, PinListQuery } from "../types/pin";
 
 const api = axios.create({
   baseURL: "/api",
@@ -52,12 +52,4 @@ export async function updatePin(id: number, payload: PinFormData): Promise<Pin> 
  */
 export async function deletePin(id: number): Promise<void> {
   await api.delete(`/pins/${id}`);
-}
-
-/**
- * 部分更新徽章记录（用于切换收藏状态）
- */
-export async function patchPin(id: number, payload: PinPatchData): Promise<Pin> {
-  const { data } = await api.patch<Pin>(`/pins/${id}`, payload);
-  return data;
 }

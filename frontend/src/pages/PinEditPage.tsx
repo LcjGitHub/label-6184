@@ -155,11 +155,11 @@ export default function PinEditPage() {
           </FormControl>
 
           <FormControl>
-            <Checkbox {...register("worn")}>是否佩戴过</Checkbox>
+            <Checkbox id="worn" {...register("worn")}>是否佩戴过</Checkbox>
           </FormControl>
 
           <FormControl>
-            <Checkbox {...register("is_favorite")}>是否收藏</Checkbox>
+            <Checkbox id="is_favorite" {...register("is_favorite")}>是否收藏</Checkbox>
           </FormControl>
 
           <Flex gap={3} pt={2}>

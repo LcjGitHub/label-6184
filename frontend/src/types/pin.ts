@@ -24,13 +24,6 @@ export interface PinFormData {
 }
 
 /**
- * 部分更新徽章时的数据（用于收藏标记）
- */
-export interface PinPatchData {
-  is_favorite: boolean;
-}
-
-/**
  * 排序字段
  */
 export type PinSortField = "exchange_date" | "source";

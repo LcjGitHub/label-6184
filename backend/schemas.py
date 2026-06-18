@@ -1,6 +1,5 @@
 """Pydantic 请求/响应模型。"""
 
-from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -21,12 +20,6 @@ class PinCreate(PinBase):
 
 class PinUpdate(PinBase):
     """更新徽章记录。"""
-
-
-class PinPatch(BaseModel):
-    """部分更新徽章记录（用于收藏标记）。"""
-
-    is_favorite: Optional[bool] = Field(None, description="是否收藏")
 
 
 class PinResponse(PinBase):
