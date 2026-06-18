@@ -12,6 +12,7 @@ class PinBase(BaseModel):
     exchange_date: str = Field(..., min_length=1, description="交换日期 YYYY-MM-DD")
     worn: bool = Field(default=False, description="是否佩戴过")
     is_favorite: bool = Field(default=False, description="是否收藏")
+    tags: str = Field(default="", description="标签，用逗号分隔多个标签")
 
 
 class PinCreate(PinBase):

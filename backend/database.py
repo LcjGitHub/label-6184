@@ -13,6 +13,7 @@ SEED_PINS = [
         "exchange_date": "2025-03-15",
         "worn": True,
         "is_favorite": False,
+        "tags": "迪士尼,米奇,珐琅",
     },
     {
         "pattern_description": "哈利波特霍格沃茨校徽金属 pin",
@@ -21,6 +22,7 @@ SEED_PINS = [
         "exchange_date": "2025-04-02",
         "worn": False,
         "is_favorite": False,
+        "tags": "哈利波特,霍格沃茨,限定款",
     },
     {
         "pattern_description": "2024 奥运会五环纪念徽章",
@@ -29,6 +31,7 @@ SEED_PINS = [
         "exchange_date": "2024-08-10",
         "worn": True,
         "is_favorite": False,
+        "tags": "奥运会,纪念章,五环",
     },
     {
         "pattern_description": "宝可梦皮卡丘渐变烤漆 pin",
@@ -37,6 +40,7 @@ SEED_PINS = [
         "exchange_date": "2025-01-20",
         "worn": False,
         "is_favorite": False,
+        "tags": "宝可梦,皮卡丘,烤漆",
     },
     {
         "pattern_description": "故宫博物院千里江山图系列",
@@ -45,6 +49,7 @@ SEED_PINS = [
         "exchange_date": "2025-05-08",
         "worn": True,
         "is_favorite": False,
+        "tags": "故宫,千里江山图,文创",
     },
 ]
 
@@ -177,11 +182,13 @@ def init_db() -> None:
                 exchange_partner TEXT NOT NULL,
                 exchange_date TEXT NOT NULL,
                 worn INTEGER NOT NULL DEFAULT 0,
-                is_favorite INTEGER NOT NULL DEFAULT 0
+                is_favorite INTEGER NOT NULL DEFAULT 0,
+                tags TEXT NOT NULL DEFAULT ''
             )
             """
         )
         _ensure_column(conn, "pins", "is_favorite", "INTEGER NOT NULL DEFAULT 0")
+        _ensure_column(conn, "pins", "tags", "TEXT NOT NULL DEFAULT ''")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS contacts (
@@ -245,8 +252,8 @@ def init_db() -> None:
                     """
                     INSERT INTO pins (
                         pattern_description, source, exchange_partner,
-                        exchange_date, worn, is_favorite
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                        exchange_date, worn, is_favorite, tags
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         pin["pattern_description"],
@@ -255,6 +262,7 @@ def init_db() -> None:
                         pin["exchange_date"],
                         1 if pin["worn"] else 0,
                         1 if pin["is_favorite"] else 0,
+                        pin.get("tags", ""),
                     ),
                 )
         contact_count = conn.execute("SELECT COUNT(*) FROM contacts").fetchone()[0]

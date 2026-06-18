@@ -35,6 +35,7 @@ def row_to_pin(row) -> PinResponse:
         exchange_date=row["exchange_date"],
         worn=bool(row["worn"]),
         is_favorite=bool(row["is_favorite"]),
+        tags=row["tags"],
     )
 
 
@@ -115,8 +116,8 @@ def list_pins(
         if trimmed_keyword:
             like_pattern = f"%{trimmed_keyword}%"
             rows = conn.execute(
-                f"SELECT * FROM pins WHERE pattern_description LIKE ? OR exchange_partner LIKE ? {order_clause}",
-                (like_pattern, like_pattern),
+                f"SELECT * FROM pins WHERE pattern_description LIKE ? OR exchange_partner LIKE ? OR tags LIKE ? {order_clause}",
+                (like_pattern, like_pattern, like_pattern),
             ).fetchall()
         else:
             rows = conn.execute(f"SELECT * FROM pins {order_clause}").fetchall()
@@ -147,8 +148,8 @@ def create_pin(payload: PinCreate) -> PinResponse:
             """
             INSERT INTO pins (
                 pattern_description, source, exchange_partner,
-                exchange_date, worn, is_favorite
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                exchange_date, worn, is_favorite, tags
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 payload.pattern_description,
@@ -157,6 +158,7 @@ def create_pin(payload: PinCreate) -> PinResponse:
                 payload.exchange_date,
                 1 if payload.worn else 0,
                 1 if payload.is_favorite else 0,
+                payload.tags,
             ),
         )
         conn.commit()
@@ -182,7 +184,8 @@ def update_pin(pin_id: int, payload: PinUpdate) -> PinResponse:
                 exchange_partner = ?,
                 exchange_date = ?,
                 worn = ?,
-                is_favorite = ?
+                is_favorite = ?,
+                tags = ?
             WHERE id = ?
             """,
             (
@@ -192,6 +195,7 @@ def update_pin(pin_id: int, payload: PinUpdate) -> PinResponse:
                 payload.exchange_date,
                 1 if payload.worn else 0,
                 1 if payload.is_favorite else 0,
+                payload.tags,
                 pin_id,
             ),
         )

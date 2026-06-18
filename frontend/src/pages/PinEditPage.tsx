@@ -8,6 +8,7 @@ import {
   Flex,
   FormControl,
   FormErrorMessage,
+  FormHelperText,
   FormLabel,
   Heading,
   Input,
@@ -26,6 +27,7 @@ const defaultValues: PinFormData = {
   exchange_date: "",
   worn: false,
   is_favorite: false,
+  tags: "",
 };
 
 /**
@@ -61,6 +63,7 @@ export default function PinEditPage() {
             exchange_date: pin.exchange_date,
             worn: pin.worn,
             is_favorite: pin.is_favorite,
+            tags: pin.tags,
           });
         }
       } catch {
@@ -160,6 +163,15 @@ export default function PinEditPage() {
 
           <FormControl>
             <Checkbox id="is_favorite" {...register("is_favorite")}>是否收藏</Checkbox>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>标签</FormLabel>
+            <Input
+              placeholder="例如：迪士尼,米奇,珐琅"
+              {...register("tags")}
+            />
+            <FormHelperText>多个标签用英文逗号分隔</FormHelperText>
           </FormControl>
 
           <Flex gap={3} pt={2}>

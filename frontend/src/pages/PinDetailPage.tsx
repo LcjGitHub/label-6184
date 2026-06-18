@@ -16,6 +16,25 @@ import { FiArrowLeft, FiEdit2 } from "react-icons/fi";
 import { fetchPin } from "../api/pins";
 import type { Pin } from "../types/pin";
 
+function renderTagBadges(tagsStr: string) {
+  const tags = tagsStr
+    .split(/[,，]/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  if (tags.length === 0) {
+    return <Text color="gray.400" fontSize="sm">—</Text>;
+  }
+  return (
+    <HStack spacing={1} flexWrap="wrap">
+      {tags.map((tag, idx) => (
+        <Badge key={idx} colorScheme="teal" variant="subtle" fontSize="xs" px={2} py={0.5}>
+          {tag}
+        </Badge>
+      ))}
+    </HStack>
+  );
+}
+
 /**
  * 徽章交换记录详情页
  */
@@ -142,6 +161,13 @@ export default function PinDetailPage() {
           <Badge colorScheme={pin.worn ? "green" : "gray"} px={2} py={1}>
             {pin.worn ? "是" : "否"}
           </Badge>
+        </Box>
+
+        <Box>
+          <Text fontSize="sm" color="gray.500" mb={1}>
+            标签
+          </Text>
+          {renderTagBadges(pin.tags)}
         </Box>
       </VStack>
     </Box>

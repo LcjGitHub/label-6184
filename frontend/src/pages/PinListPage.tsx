@@ -6,6 +6,7 @@ import {
   Button,
   Flex,
   Heading,
+  HStack,
   IconButton,
   Input,
   InputGroup,
@@ -122,6 +123,7 @@ export default function PinListPage() {
         exchange_date: pin.exchange_date,
         worn: pin.worn,
         is_favorite: newFavorite,
+        tags: pin.tags,
       });
       setPins((prev) =>
         prev.map((p) => (p.id === pin.id ? updatedPin : p))
@@ -160,12 +162,31 @@ export default function PinListPage() {
 
   const hasActiveSearch = searchKeyword.trim().length > 0;
 
+  const renderTagBadges = (tagsStr: string) => {
+    const tags = tagsStr
+      .split(/[,，]/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    if (tags.length === 0) {
+      return <Text color="gray.400" fontSize="sm">—</Text>;
+    }
+    return (
+      <HStack spacing={1} flexWrap="wrap">
+        {tags.map((tag, idx) => (
+          <Badge key={idx} colorScheme="teal" variant="subtle" fontSize="xs" px={2} py={0.5}>
+            {tag}
+          </Badge>
+        ))}
+      </HStack>
+    );
+  };
+
   const renderTableBody = () => {
     if (loading) {
       return (
         <Tbody>
           <Tr>
-            <Td colSpan={7} py={12} textAlign="center">
+            <Td colSpan={8} py={12} textAlign="center">
               <Spinner size="lg" color="teal.500" />
             </Td>
           </Tr>
@@ -176,7 +197,7 @@ export default function PinListPage() {
       return (
         <Tbody>
           <Tr>
-            <Td colSpan={7} py={12} textAlign="center">
+            <Td colSpan={8} py={12} textAlign="center">
               <Text color="gray.500">
                 {hasActiveSearch
                   ? "未找到匹配记录"
@@ -223,6 +244,7 @@ export default function PinListPage() {
                 {pin.worn ? "是" : "否"}
               </Badge>
             </Td>
+            <Td>{renderTagBadges(pin.tags)}</Td>
             <Td textAlign="right">
               <IconButton
                 as={RouterLink}
@@ -313,6 +335,7 @@ export default function PinListPage() {
                 </Flex>
               </Th>
               <Th>佩戴过</Th>
+              <Th>标签</Th>
               <Th textAlign="right">操作</Th>
             </Tr>
           </Thead>

@@ -9,6 +9,7 @@ export interface Pin {
   exchange_date: string;
   worn: boolean;
   is_favorite: boolean;
+  tags: string;
 }
 
 /**
@@ -21,6 +22,7 @@ export interface PinFormData {
   exchange_date: string;
   worn: boolean;
   is_favorite: boolean;
+  tags: string;
 }
 
 /**
