@@ -37,7 +37,8 @@ export default function PinListPage() {
   const loadPins = useCallback(async (keyword?: string) => {
     setLoading(true);
     try {
-      const data = await fetchPins(keyword || undefined);
+      const trimmed = keyword?.trim();
+      const data = await fetchPins(trimmed || undefined);
       setPins(data);
     } catch {
       toast({
@@ -53,15 +54,11 @@ export default function PinListPage() {
   }, [toast]);
 
   useEffect(() => {
-    loadPins();
-  }, [loadPins]);
-
-  useEffect(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     debounceTimerRef.current = setTimeout(() => {
-      loadPins(searchKeyword.trim());
+      loadPins(searchKeyword);
     }, 300);
     return () => {
       if (debounceTimerRef.current) {
@@ -80,19 +77,79 @@ export default function PinListPage() {
     try {
       await deletePin(pin.id);
       toast({ title: "已删除", status: "success", duration: 2000 });
-      await loadPins(searchKeyword.trim());
+      await loadPins(searchKeyword);
     } catch {
       toast({ title: "删除失败", status: "error", duration: 3000 });
     }
   };
 
-  if (loading) {
+  const hasActiveSearch = searchKeyword.trim().length > 0;
+
+  const renderTableBody = () => {
+    if (loading) {
+      return (
+        <Tbody>
+          <Tr>
+            <Td colSpan={6} py={12} textAlign="center">
+              <Spinner size="lg" color="teal.500" />
+            </Td>
+          </Tr>
+        </Tbody>
+      );
+    }
+    if (pins.length === 0) {
+      return (
+        <Tbody>
+          <Tr>
+            <Td colSpan={6} py={12} textAlign="center">
+              <Text color="gray.500">
+                {hasActiveSearch
+                  ? "未找到匹配记录"
+                  : "暂无记录，点击「新增记录」添加第一条交换记录。"}
+              </Text>
+            </Td>
+          </Tr>
+        </Tbody>
+      );
+    }
     return (
-      <Flex justify="center" py={12}>
-        <Spinner size="lg" color="teal.500" />
-      </Flex>
+      <Tbody>
+        {pins.map((pin) => (
+          <Tr key={pin.id} _hover={{ bg: "gray.50" }}>
+            <Td fontWeight="medium">{pin.pattern_description}</Td>
+            <Td>{pin.source}</Td>
+            <Td>{pin.exchange_partner}</Td>
+            <Td>{pin.exchange_date}</Td>
+            <Td>
+              <Badge colorScheme={pin.worn ? "green" : "gray"}>
+                {pin.worn ? "是" : "否"}
+              </Badge>
+            </Td>
+            <Td textAlign="right">
+              <IconButton
+                as={RouterLink}
+                to={`/pins/${pin.id}/edit`}
+                aria-label="编辑"
+                icon={<FiEdit2 />}
+                size="sm"
+                variant="ghost"
+                colorScheme="teal"
+              />
+              <IconButton
+                aria-label="删除"
+                icon={<FiTrash2 />}
+                size="sm"
+                variant="ghost"
+                colorScheme="red"
+                ml={1}
+                onClick={() => handleDelete(pin)}
+              />
+            </Td>
+          </Tr>
+        ))}
+      </Tbody>
     );
-  }
+  };
 
   return (
     <Box>
@@ -124,61 +181,21 @@ export default function PinListPage() {
         </InputGroup>
       </Box>
 
-      {pins.length === 0 ? (
-        <Text color="gray.500" py={8} textAlign="center">
-          暂无记录，点击「新增记录」添加第一条交换记录。
-        </Text>
-      ) : (
-        <Box overflowX="auto" bg="white" borderRadius="md" shadow="sm">
-          <Table size="md">
-            <Thead bg="gray.100">
-              <Tr>
-                <Th>图案描述</Th>
-                <Th>来源</Th>
-                <Th>交换对象</Th>
-                <Th>日期</Th>
-                <Th>佩戴过</Th>
-                <Th textAlign="right">操作</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {pins.map((pin) => (
-                <Tr key={pin.id} _hover={{ bg: "gray.50" }}>
-                  <Td fontWeight="medium">{pin.pattern_description}</Td>
-                  <Td>{pin.source}</Td>
-                  <Td>{pin.exchange_partner}</Td>
-                  <Td>{pin.exchange_date}</Td>
-                  <Td>
-                    <Badge colorScheme={pin.worn ? "green" : "gray"}>
-                      {pin.worn ? "是" : "否"}
-                    </Badge>
-                  </Td>
-                  <Td textAlign="right">
-                    <IconButton
-                      as={RouterLink}
-                      to={`/pins/${pin.id}/edit`}
-                      aria-label="编辑"
-                      icon={<FiEdit2 />}
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="teal"
-                    />
-                    <IconButton
-                      aria-label="删除"
-                      icon={<FiTrash2 />}
-                      size="sm"
-                      variant="ghost"
-                      colorScheme="red"
-                      ml={1}
-                      onClick={() => handleDelete(pin)}
-                    />
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Box>
-      )}
+      <Box overflowX="auto" bg="white" borderRadius="md" shadow="sm">
+        <Table size="md">
+          <Thead bg="gray.100">
+            <Tr>
+              <Th>图案描述</Th>
+              <Th>来源</Th>
+              <Th>交换对象</Th>
+              <Th>日期</Th>
+              <Th>佩戴过</Th>
+              <Th textAlign="right">操作</Th>
+            </Tr>
+          </Thead>
+          {renderTableBody()}
+        </Table>
+      </Box>
     </Box>
   );
 }

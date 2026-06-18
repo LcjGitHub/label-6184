@@ -99,8 +99,9 @@ def list_pins(
     """获取全部徽章交换记录，支持关键词搜索。"""
     conn = get_connection()
     try:
-        if keyword:
-            like_pattern = f"%{keyword}%"
+        trimmed_keyword = keyword.strip() if keyword else None
+        if trimmed_keyword:
+            like_pattern = f"%{trimmed_keyword}%"
             rows = conn.execute(
                 "SELECT * FROM pins WHERE pattern_description LIKE ? OR exchange_partner LIKE ? ORDER BY exchange_date DESC, id DESC",
                 (like_pattern, like_pattern),
